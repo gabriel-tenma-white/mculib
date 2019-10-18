@@ -24,20 +24,25 @@ namespace mculib {
 		auto tmp = (uint16_t) p.idr();
 		return (tmp & (uint16_t(1) << p.index)) ? 1 : 0;
 	}
-	static void _delay_3t(uint32_t cycles)
+	static void _delay_8t(uint32_t cycles)
 	{
+		if(cycles <= 5) return;
 		asm __volatile__ (
 			"1: \n"
-			"	subs %[cyc],#1 \n"	// 1Tck
-			"	bne 1b \n"		// 2Tck
-			"	bx lr \n"
-			: // No output 
-			: [cyc] "r" (cycles)
+			  " subs  %[cyc], %[cyc], #1 \n"  // 1 cycle
+			  " nop             \n"  // 1 cycle
+			  " nop             \n"  // 1 cycle
+			  " nop             \n"  // 1 cycle
+			  " nop             \n"  // 1 cycle
+			  " nop             \n"  // 1 cycle
+			  " bne  1b    \n"  // 2 if taken, 1 otherwise
+			: [cyc] "+l" (cycles)
+			: // no inputs
 			: // No memory
 		);
 	}
 	static void delayMicroseconds(uint32_t us) {
-		_delay_3t(us*cpu_mhz/3);
+		_delay_8t(us*cpu_mhz/8);
 	}
 	static void delay(int ms) {
 		delayMicroseconds(uint32_t(ms)*1000);
