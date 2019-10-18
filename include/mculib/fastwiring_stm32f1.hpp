@@ -5,7 +5,7 @@
 namespace mculib {
 	static inline void pinMode(Pad p, int mode) {
 		if(mode == OUTPUT) {
-			gpio_set_mode(p.bank, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, uint16_t(1) << p.index);
+			gpio_set_mode(p.bank, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, uint16_t(1) << p.index);
 		} else if(mode == INPUT_PULLUP) {
 			gpio_set(p.bank, uint16_t(1) << p.index);
 			gpio_set_mode(p.bank, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, uint16_t(1) << p.index);
