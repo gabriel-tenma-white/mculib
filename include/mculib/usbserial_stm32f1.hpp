@@ -7,7 +7,7 @@
 
 
 namespace usbSerial {
-	extern void (*receiveCB)(uint8_t* s, int len);
+	extern small_function<void(uint8_t* s, int len)> _receiveCB;
 	usbd_device* initUsbSerial();
 	void send(usbd_device* dev, const char* s, int len);
 }
@@ -51,6 +51,7 @@ namespace mculib {
 		}
 
 		void setReceiveCallback(const small_function<void(uint8_t* s, int len)>& cb) {
+			usbSerial::_receiveCB = cb;
 			_receiveCB = cb;
 		}
 	};

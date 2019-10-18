@@ -5,12 +5,13 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/st_usbfs.h>
 #include <mculib/fastwiring.hpp>
+#include <mculib/small_function.hpp>
 #include <stdlib.h>
 
 using namespace mculib;
 
 namespace usbSerial {
-	void (*receiveCB)(uint8_t* s, int len) = NULL;
+	small_function<void(uint8_t* s, int len)> _receiveCB;
 	
 static const struct usb_device_descriptor dev = {
 	.bLength = USB_DT_DEVICE_SIZE,
@@ -206,8 +207,8 @@ static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 	/*if(buf[len-1]&1)
 		gpio_set(GPIOC,GPIO13);
 	else gpio_clear(GPIOC,GPIO13);*/
-	if(receiveCB != NULL)
-		receiveCB((uint8_t*)buf, len);
+	if(_receiveCB)
+		_receiveCB((uint8_t*)buf, len);
 	/*
 	if (len) {
 		usbd_ep_write_packet(usbd_dev, 0x82, buf, len);
