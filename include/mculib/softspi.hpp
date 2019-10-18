@@ -34,6 +34,7 @@ namespace mculib {
 			_delay();
 		}
 		
+		// perform a send & recv transfer
 		uint32_t doTransfer(uint32_t data, int bits) {
 			data <<= (32-bits);
 			uint32_t ret = 0;
@@ -49,6 +50,57 @@ namespace mculib {
 				_delay();
 			}
 			return ret;
+		}
+
+		// perform a send-only transfer
+		void doTransfer_send(uint32_t data, int bits) {
+			data <<= (32-bits);
+			for(int i=0;i<bits;i++) {
+				// clock low; put data on bus
+				digitalWrite(mosi, data>>31);
+				digitalWrite(clk, 0);
+				data <<= 1;
+				_delay();
+				// clock high
+				digitalWrite(clk, 1);
+				_delay();
+			}
+		}
+		
+		void doTransfer_bulk_send(uint8_t* buf, int len) {
+			uint8_t* end = buf + len;
+			while(buf != end) {
+				uint8_t value = *buf;
+				for(int i=0;i<8;i++) {
+					// clock low; put data on bus
+					digitalWrite(mosi, value>>7);
+					digitalWrite(clk, 0);
+					value <<= 1;
+					_delay();
+					// clock high
+					digitalWrite(clk, 1);
+					_delay();
+				}
+				buf++;
+			}
+		}
+
+		void doTransfer_bulk_send(uint16_t* buf, int words) {
+			uint16_t* end = buf + words;
+			while(buf != end) {
+				uint16_t value = *buf;
+				for(int i=0;i<16;i++) {
+					// clock low; put data on bus
+					digitalWrite(mosi, value>>15);
+					digitalWrite(clk, 0);
+					value <<= 1;
+					_delay();
+					// clock high
+					digitalWrite(clk, 1);
+					_delay();
+				}
+				buf++;
+			}
 		}
 		
 		uint32_t doTransfer_slow(uint32_t data, int bits) {
