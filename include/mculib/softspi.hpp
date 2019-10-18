@@ -1,5 +1,5 @@
 #pragma once
-#include <mculib/fastwiring.H>
+#include <mculib/fastwiring.hpp>
 
 namespace mculib {
 
