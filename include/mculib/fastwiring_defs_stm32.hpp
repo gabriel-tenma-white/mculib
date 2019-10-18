@@ -20,8 +20,8 @@ namespace mculib {
 		Pad(): bank(0), index(0), _bsrr(0), _idr(0) {}
 		constexpr Pad(uint32_t bank, uint32_t index):
 			bank(bank), index(index),
-			_bsrr(bank + 0x10),
-			_idr(bank + 0x08) {
+			_bsrr((uint32_t)&GPIO_BSRR(bank)),
+			_idr((uint32_t)&GPIO_IDR(bank)) {
 		}
 	};
 
