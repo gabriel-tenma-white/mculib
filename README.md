@@ -20,6 +20,9 @@ Not all modules support all devices. Check header file.
 An optimized wiring API.
 
 `#include <mculib/fastwiring.hpp>`
+
+`OBJS += $(MCULIB)/fastwiring.o`
+
 ```c++
 namespace mculib {
   // mode is one of: INPUT, OUTPUT, INPUT_PULLUP, INPUT_PULLDOWN

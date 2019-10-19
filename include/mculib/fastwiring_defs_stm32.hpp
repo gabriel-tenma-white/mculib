@@ -6,24 +6,71 @@
 
 namespace mculib {
 	struct Pad {
-		uint32_t bank;
-		uint32_t index;
+		uint32_t _bank;
+		uint32_t _index;
 		uint32_t _bsrr;
 		uint32_t _idr;
 
-		volatile uint32_t& bsrr() {
+
+		uint32_t bank() const __attribute__((always_inline)) {
+			return _bank;
+		}
+		uint16_t bankNumber() const {
+			switch(_bank) {
+				case GPIOA: return 0;
+				case GPIOB: return 1;
+				case GPIOC: return 2;
+				case GPIOD: return 3;
+				case GPIOE: return 4;
+				case GPIOF: return 5;
+				default: return -1;
+			}
+		}
+		uint32_t index() const __attribute__((always_inline)) {
+			return _index;
+		}
+		uint32_t mask() const __attribute__((always_inline)) {
+			return uint32_t(1) << _index;
+		}
+		uint32_t maskUpper() const __attribute__((always_inline)) {
+			return uint32_t(1 << 16) << _index;
+		}
+
+		volatile uint32_t& bsrr() const __attribute__((always_inline)) {
 			return *(volatile uint32_t*) _bsrr;
 		}
-		volatile uint32_t& idr() {
+		volatile uint32_t& idr() const __attribute__((always_inline)) {
 			return *(volatile uint32_t*) _idr;
 		}
-		Pad(): bank(0), index(0), _bsrr(0), _idr(0) {}
+		Pad(): _bank(0), _index(0), _bsrr(0), _idr(0) {}
 		constexpr Pad(uint32_t bank, uint32_t index):
-			bank(bank), index(index),
+			_bank(bank), _index(index),
 			_bsrr((uint32_t)&GPIO_BSRR(bank)),
 			_idr((uint32_t)&GPIO_IDR(bank)) {
 		}
 	};
+	
+	static inline bool operator==(const Pad& a, const Pad& b) {
+		return (a.bank() == b.bank()) && (a.index() == b.index());
+	}
+
+	struct irqNumber {
+		uint32_t bank, index;
+	};
+	static inline bool operator==(irqNumber a, irqNumber b) {
+		return (a.bank == b.bank) && (a.index == b.index);
+	}
+	static irqNumber digitalPinToInterrupt(Pad p) {
+		return irqNumber {p.bank(), p.index()};
+	}
+
+	struct irqTrigger {
+		exti_trigger_type type;
+	};
+
+	static constexpr irqTrigger RISING { EXTI_TRIGGER_RISING };
+	static constexpr irqTrigger FALLING { EXTI_TRIGGER_FALLING };
+	static constexpr irqTrigger RISING_AND_FALLING { EXTI_TRIGGER_BOTH };
 
 	static constexpr Pad PA0 = {GPIOA, 0};
 	static constexpr Pad PA1 = {GPIOA, 1};

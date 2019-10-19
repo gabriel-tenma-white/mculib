@@ -1,28 +1,21 @@
 #pragma once
 #include <mculib/fastwiring_defs.hpp>
 #include <mculib/fastwiring_defs_stm32.hpp>
+#include <mculib/fastwiring_stm32.hpp>
 
 namespace mculib {
 	static inline void pinMode(Pad p, int mode) {
 		if(mode == OUTPUT) {
-			gpio_set_mode(p.bank, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, uint16_t(1) << p.index);
+			gpio_set_mode(p.bank(), GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, p.mask());
 		} else if(mode == INPUT_PULLUP) {
-			gpio_set(p.bank, uint16_t(1) << p.index);
-			gpio_set_mode(p.bank, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, uint16_t(1) << p.index);
+			gpio_set(p.bank(), p.mask());
+			gpio_set_mode(p.bank(), GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, p.mask());
 		} else if(mode == INPUT_PULLDOWN) {
-			gpio_clear(p.bank, uint16_t(1) << p.index);
-			gpio_set_mode(p.bank, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, uint16_t(1) << p.index);
+			gpio_clear(p.bank(), p.mask());
+			gpio_set_mode(p.bank(), GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, p.mask());
 		} else {
-			gpio_set_mode(p.bank, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, uint16_t(1) << p.index);
+			gpio_set_mode(p.bank(), GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, p.mask());
 		}
-	}
-	static inline void digitalWrite(Pad p, int bit) {
-		if(bit) p.bsrr() = uint32_t(1) << p.index;
-		else p.bsrr() = uint32_t(1 << 16) << p.index;
-	}
-	static inline int digitalRead(Pad p) {
-		auto tmp = (uint16_t) p.idr();
-		return (tmp & (uint16_t(1) << p.index)) ? 1 : 0;
 	}
 	static void _delay_8t(uint32_t cycles)
 	{
@@ -46,5 +39,14 @@ namespace mculib {
 	}
 	static void delay(int ms) {
 		delayMicroseconds(uint32_t(ms)*1000);
+	}
+	static void enableEXTIIRQs() {
+		nvic_enable_irq(NVIC_EXTI0_IRQ);
+		nvic_enable_irq(NVIC_EXTI1_IRQ);
+		nvic_enable_irq(NVIC_EXTI2_IRQ);
+		nvic_enable_irq(NVIC_EXTI3_IRQ);
+		nvic_enable_irq(NVIC_EXTI4_IRQ);
+		nvic_enable_irq(NVIC_EXTI9_5_IRQ);
+		nvic_enable_irq(NVIC_EXTI15_10_IRQ);
 	}
 }
