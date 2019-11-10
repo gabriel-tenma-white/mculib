@@ -25,13 +25,14 @@ namespace mculib {
 			for(int i=0;i<10;i++) _delay();
 		}
 		void beginTransfer() {
-			digitalWrite(sel, 0);
 			_delay();
+			digitalWrite(sel, 0);
+			_delay(); _delay();
 		}
 		void endTransfer() {
+			_delay(); _delay();
 			digitalWrite(clk, 0);
 			digitalWrite(sel, 1);
-			_delay();
 		}
 		
 		// perform a send & recv transfer
@@ -67,8 +68,8 @@ namespace mculib {
 			}
 		}
 		
-		void doTransfer_bulk_send(uint8_t* buf, int len) {
-			uint8_t* end = buf + len;
+		void doTransfer_bulk_send(const uint8_t* buf, int len) {
+			const uint8_t* end = buf + len;
 			while(buf != end) {
 				uint8_t value = *buf;
 				for(int i=0;i<8;i++) {
@@ -84,9 +85,28 @@ namespace mculib {
 				buf++;
 			}
 		}
+		
+		void doTransfer_bulk_recv(uint8_t* buf, int len) {
+			digitalWrite(mosi, 0);
+			uint8_t* end = buf + len;
+			while(buf != end) {
+				uint8_t ret = 0;
+				for(int i=0;i<8;i++) {
+					// clock low
+					digitalWrite(clk, 0);
+					_delay();
+					// clock high, read data from
+					ret = uint32_t(digitalRead(miso)) | (ret << 1);
+					digitalWrite(clk, 1);
+					_delay();
+				}
+				*buf = ret;
+				buf++;
+			}
+		}
 
-		void doTransfer_bulk_send(uint16_t* buf, int words) {
-			uint16_t* end = buf + words;
+		void doTransfer_bulk_send(const uint16_t* buf, int words) {
+			const uint16_t* end = buf + words;
 			while(buf != end) {
 				uint16_t value = *buf;
 				for(int i=0;i<16;i++) {
