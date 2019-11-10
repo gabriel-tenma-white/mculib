@@ -6,7 +6,7 @@
 
 // an implementation of std::function using no dynamic memory allocations.
 // the size of the stored functor object must be no larger than the size of
-// one pointer. For example, a lambda function that captures a single pointer
+// two pointers. For example, a lambda function that captures two pointers
 // can be used with small_function.
 
 template<class Sig>
@@ -39,20 +39,33 @@ struct small_function_state : small_function_state_base<R, Args...> {
 
 
 
+// denotes an empty functor
+static void* NULLSTATE = (void*)-1;
+
+// set before setting functor, so that a size 0 functor
+// is still recognized as non-null
+static void* DEFAULTSTATE = (void*)1;
+
 template<class R, class... Args>
 class small_function<R(Args...)>
 {
-	// allocate enough space for an object with the size of 2 pointers.
+	// allocate enough space for an object with the size of 3 pointers.
 	// one of the pointers is the vtable pointer.
-    void* _state[2];
+	void* _state[3];
+
+
 public:
-    small_function() { _state[0] = nullptr; };
+    small_function() { _state[0] = NULLSTATE; };
 
     template<class Callable, class = decltype(R(std::declval<typename std::decay<Callable>::type>()(std::declval<Args>()...)))>
     small_function(Callable&& t) {
-		static_assert(sizeof(Callable) <= sizeof(void*),
-						"functor too large for small_function (up to one pointer's size allowed)");
-		new ((void*) _state) small_function_state<typename std::decay<Callable>::type, R, Args...>(static_cast<Callable&&>(t));
+		using StateType = small_function_state<typename std::decay<Callable>::type, R, Args...>;
+		static_assert(sizeof(Callable) <= (sizeof(void*) * 2),
+						"functor too large for small_function (up to two pointers' size allowed)");
+		static_assert(sizeof(StateType) <= sizeof(_state),
+						"internal error: small_function_state is too large!");
+		_state[0] = DEFAULTSTATE;
+		new ((void*) _state) StateType(static_cast<Callable&&>(t));
 	}
 
     ~small_function() {
@@ -62,15 +75,17 @@ public:
     small_function(small_function& rhs) { rhs.clone((void*) _state); }
     small_function(const small_function& rhs) { rhs.clone((void*) _state); }
     small_function(small_function&& rhs) noexcept {
-		_state[0] = rhs._state[0]; 
+		_state[0] = rhs._state[0];
 		_state[1] = rhs._state[1];
-		rhs._state[0] = nullptr;
+		_state[2] = rhs._state[2];
+		rhs._state[0] = NULLSTATE;
 	}
     small_function(const small_function&& rhs) = delete;
 
     void operator=(small_function rhs) noexcept {
         std::swap(_state[0], rhs._state[0]);
         std::swap(_state[1], rhs._state[1]);
+        std::swap(_state[2], rhs._state[2]);
     }
 
     inline R operator()(Args... args) const {
@@ -78,8 +93,8 @@ public:
     }
 
     explicit operator bool() const noexcept {
-		// assume first member of the state object is the vtable pointer, which is non-null
-        return _state[0] != nullptr;
+		// assume first member of the state object is the vtable pointer, which should not equal NULLSTATE
+        return _state[0] != NULLSTATE;
     }
     inline small_function_state_base<R, Args...>* ptr() const {
 		return (small_function_state_base<R, Args...>*) _state;
