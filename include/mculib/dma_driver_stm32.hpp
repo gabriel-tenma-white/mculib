@@ -26,11 +26,15 @@ namespace mculib {
 		void start();
 		void stop();
 
+		// set all parameters
 		void setTransferParams(const DMATransferParams& srcParams,
 							const DMATransferParams& dstParams,
 							DMADirection dir, int nWords, bool repeat);
 
 		// returns current memory offset into array (in words)
 		uint32_t position();
+
+		// returns whether the DMA operation finished; only valid if repeat is unset.
+		bool finished();
 	};
 }
