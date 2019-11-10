@@ -19,7 +19,7 @@ namespace mculib {
 	}
 	static void _delay_8t(uint32_t cycles)
 	{
-		if(cycles <= 5) return;
+		if(cycles < 1) return;
 		asm __volatile__ (
 			"1: \n"
 			  " subs  %[cyc], %[cyc], #1 \n"  // 1 cycle
