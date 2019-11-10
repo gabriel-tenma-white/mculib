@@ -42,7 +42,7 @@ namespace mculib {
 		volatile uint32_t& idr() const __attribute__((always_inline)) {
 			return *(volatile uint32_t*) _idr;
 		}
-		Pad(): _bank(0), _index(0), _bsrr(0), _idr(0) {}
+		constexpr Pad(): _bank(0), _index(0), _bsrr(0), _idr(0) {}
 		constexpr Pad(uint32_t bank, uint32_t index):
 			_bank(bank), _index(index),
 			_bsrr((uint32_t)&GPIO_BSRR(bank)),
