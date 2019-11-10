@@ -91,4 +91,7 @@ namespace mculib {
 	uint32_t DMAChannel::position() {
 		return _nWords - DMA_CNDTR(driver.device, channel);
 	}
+	bool DMAChannel::finished() {
+		return DMA_CNDTR(driver.device, channel) == 0;
+	}
 }
