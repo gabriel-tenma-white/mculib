@@ -286,13 +286,13 @@ namespace Si5351 {
 		tmp |= (uint8_t) (MSN_P2_16_19_MASK & (MSN_P2 >> 16));
 		WriteRegister(REG_MSN_P2_16_19 + 8 * channel, tmp);
 
-		/*tmp = (uint8_t) MSN_P3;
-		WriteRegister(REG_MSN_P3_0_7 + 8 * PLL_Channel, tmp);
+		tmp = (uint8_t) MSN_P3;
+		WriteRegister(REG_MSN_P3_0_7 + 8 * channel, tmp);
 		tmp = (uint8_t) (MSN_P3 >> 8);
-		WriteRegister(REG_MSN_P3_8_15 + 8 * PLL_Channel, tmp);
-		tmp = cStruct.val_REG_MSN_P3_16_19 & (~MSN_P3_16_19_MASK);
+		WriteRegister(REG_MSN_P3_8_15 + 8 * channel, tmp);
+		tmp = val_REG_MSN_P3_16_19 & (~MSN_P3_16_19_MASK);
 		tmp |= (uint8_t) (MSN_P3_16_19_MASK & ((MSN_P3 >> 16) << 4));
-		WriteRegister(REG_MSN_P3_16_19 + 8 * PLL_Channel, tmp);*/
+		WriteRegister(REG_MSN_P3_16_19 + 8 * channel, tmp);
 	}
 
 	void Si5351Driver::PLLReset(PLLChannel PLL_Channel)
@@ -453,94 +453,70 @@ namespace Si5351 {
 		}
 	}
 
-	void Si5351Driver::MSConfig(MSChannel MS_Channel)
-	{
-		uint8_t tmp;
-		uint32_t MS_P1, MS_P2, MS_P3;
+	void Si5351Driver::MSConfig(MSChannel MS_Channel) {
+		MSConfig2(MS_Channel);
+		MSSourceConfig(MS_Channel);
+	}
+	void Si5351Driver::MSConfig2(MSChannel MS_Channel) {
+		auto div = this->MS[MS_Channel].MS_Divider_Integer;
+		auto num = this->MS[MS_Channel].MS_Divider_Numerator;
+		auto denom = this->MS[MS_Channel].MS_Divider_Denominator;
+		auto rdiv = (int) this->CLK[MS_Channel].CLK_R_Div;
+		uint8_t dat;
 
+		uint32_t P1;
+		uint32_t P2;
+		uint32_t P3;
+		uint32_t div4 = 0;
+
+		/* Output Multisynth Divider Equations
+		* where: a = div, b = num and c = denom
+		* P1 register is an 18-bit value using following formula:
+		* 	P1[17:0] = 128 * a + floor(128*(b/c)) - 512
+		* P2 register is a 20-bit value using the following formula:
+		* 	P2[19:0] = 128 * b - c * floor(128*(b/c))
+		* P3 register is a 20-bit value using the following formula:
+		* 	P3[19:0] = c
+		*/
+		/* Set the main PLL config registers */
+		if (div == 4) {
+			div4 = MS_DIVBY4_MASK;
+			P1 = P2 = 0;
+			P3 = 1;
+		} else if (num == 0) {
+			/* Integer mode */
+			P1 = 128 * div - 512;
+			P2 = 0;
+			P3 = 1;
+		} else {
+			/* Fractional mode */
+			P1 = 128 * div + ((128 * num) / denom) - 512;
+			P2 = 128 * num - denom * ((128 * num) / denom);
+			P3 = denom;
+		}
+
+		/* Set the MSx config registers */
+		uint8_t regBase = 42 + 8 * MS_Channel;
+		uint8_t reg[9];
+		reg[0] = regBase;
+		reg[1] = (P3 & 0x0000FF00) >> 8;
+		reg[2] = (P3 & 0x000000FF);
+		reg[3] = ((P1 & 0x00030000) >> 16) | div4 | rdiv;
+		reg[4] = (P1 & 0x0000FF00) >> 8;
+		reg[5] = (P1 & 0x000000FF);
+		reg[6] = ((P3 & 0x000F0000) >> 12) | ((P2 & 0x000F0000) >> 16);
+		reg[7] = (P2 & 0x0000FF00) >> 8;
+		reg[8] = (P2 & 0x000000FF);
+		WriteRegisters(reg, 9);
+	}
+	void Si5351Driver::MSSourceConfig(MSChannel MS_Channel) {
 		//configure MultiSynth clock source
-		tmp = ReadRegister(REG_MS_SRC + MS_Channel);
+		uint8_t tmp = ReadRegister(REG_MS_SRC + MS_Channel);
 		tmp &= ~MS_SRC_MASK;
-		if (this->MS[MS_Channel].MS_Clock_Source == MS_Clock_Source_PLLB)
-		{
+		if (MS[MS_Channel].MS_Clock_Source == MS_Clock_Source_PLLB) {
 			tmp |= MS_SRC_MASK;
 		}
 		WriteRegister(REG_MS_SRC + MS_Channel, tmp);
-
-		if (MS_Channel <= MS5) //configuration is simpler for MS6 and 7 since they are integer-only
-		{
-			//if next value not in even integer mode or if divider is not equal to 4, disable DIVBY4
-			if ((this->MS[MS_Channel].MS_Divider_Integer != 4)|(this->MS[MS_Channel].MS_Divider_Numerator != 0))
-			{
-				tmp = ReadRegister(REG_MS_DIVBY4 + 8 * MS_Channel);
-				tmp &= ~MS_DIVBY4_MASK;
-				WriteRegister(REG_MS_DIVBY4 + 8 * MS_Channel, tmp);
-			}
-
-			//if next value not in even integer mode or SS enabled, disable integer mode
-			if ((this->MS[MS_Channel].MS_Divider_Numerator != 0)|((this->MS[MS_Channel].MS_Divider_Integer & 0x01) != 0)|(this->SS.SS_Enable == ON))
-			{
-				tmp = ReadRegister(REG_MS_INT + MS_Channel);
-				tmp &= ~MS_INT_MASK;
-				WriteRegister(REG_MS_INT + MS_Channel, tmp);
-			}
-
-			//set new divider value
-			MS_P1 = 128 * this->MS[MS_Channel].MS_Divider_Integer
-					+ ((128 * this->MS[MS_Channel].MS_Divider_Numerator) /  this->MS[MS_Channel].MS_Divider_Denominator)
-					- 512;
-			MS_P2 = 128 * this->MS[MS_Channel].MS_Divider_Numerator
-					- this->MS[MS_Channel].MS_Divider_Denominator
-					* ((128 * this->MS[MS_Channel].MS_Divider_Numerator) / this->MS[MS_Channel].MS_Divider_Denominator);
-			MS_P3 = this->MS[MS_Channel].MS_Divider_Denominator;
-
-			tmp = (uint8_t) MS_P1;
-			WriteRegister(REG_MS_P1_0_7 + 8 * MS_Channel, tmp);
-			tmp = (uint8_t) (MS_P1 >> 8);
-			WriteRegister(REG_MS_P1_8_15 + 8 * MS_Channel, tmp);
-			tmp = ReadRegister(REG_MS_P1_16_17);
-			tmp &= ~MS_P1_16_17_MASK;
-			tmp |= (uint8_t) (MS_P1_16_17_MASK & (MS_P1 >> 16));
-			WriteRegister(REG_MS_P1_16_17 + 8 * MS_Channel, tmp);
-
-			tmp = (uint8_t) MS_P2;
-			WriteRegister(REG_MS_P2_0_7 + 8 * MS_Channel, tmp);
-			tmp = (uint8_t) (MS_P2 >> 8);
-			WriteRegister(REG_MS_P2_8_15 + 8 * MS_Channel, tmp);
-			ReadRegister(REG_MS_P2_16_19 + 8 * MS_Channel);
-			tmp &= ~MS_P2_16_19_MASK;
-			tmp |= (uint8_t) (MS_P2_16_19_MASK & (MS_P2 >> 16));
-			WriteRegister(REG_MS_P2_16_19 + 8 * MS_Channel, tmp);
-
-			tmp = (uint8_t) MS_P3;
-			WriteRegister(REG_MS_P3_0_7 + 8 * MS_Channel, tmp);
-			tmp = (uint8_t) (MS_P3 >> 8);
-			WriteRegister(REG_MS_P3_8_15 + 8 * MS_Channel, tmp);
-			tmp = ReadRegister(REG_MS_P3_16_19 + 8 * MS_Channel);
-			tmp &= ~MS_P3_16_19_MASK;
-			tmp |= (uint8_t) (MS_P3_16_19_MASK & ((MS_P3 >> 16) << 4));
-			WriteRegister(REG_MS_P3_16_19 + 8 * MS_Channel, tmp);
-
-			//if next value is even integer and SS not enabled, enable integer mode
-			if ((this->MS[MS_Channel].MS_Divider_Numerator == 0) & ((this->MS[MS_Channel].MS_Divider_Integer & 0x01) == 0) & (this->SS.SS_Enable == OFF))
-			{
-				tmp = ReadRegister(REG_MS_INT + MS_Channel);
-				tmp |= MS_INT_MASK;
-				WriteRegister(REG_MS_INT + MS_Channel, tmp);
-
-				//if next value in integer mode and if divider is equal to 4, enable DIVBY4
-				if (this->MS[MS_Channel].MS_Divider_Integer == 4)
-				{
-					tmp = ReadRegister(REG_MS_DIVBY4 + 8 * MS_Channel);
-					tmp |= MS_DIVBY4_MASK;
-					WriteRegister(REG_MS_DIVBY4 + 8 * MS_Channel, tmp);
-				}
-			}
-		} else {
-			//configure divider of Multisynth 6 and 7
-			WriteRegister(REG_MS67_P1 + (MS_Channel - MS6), (uint8_t)(this->MS[MS_Channel].MS_Divider_Integer));
-			//can be only even integers between 6 and 254, inclusive
-		}
 	}
 
 	void Si5351Driver::CLKPowerCmd(CLKChannel CLK_Channel)

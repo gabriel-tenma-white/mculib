@@ -436,6 +436,7 @@ namespace Si5351 {
 	public:
 		// si5351レジスタを読み書きするためのフック
 		small_function<int(uint8_t reg_address, uint8_t reg_data)> WriteRegister;
+		small_function<int(uint8_t* data, int len)> WriteRegisters;
 		small_function<uint8_t(uint8_t reg_address)> ReadRegister;
 
 		/*
@@ -489,7 +490,14 @@ namespace Si5351 {
 
 		void SSConfig();
 
+		// update multisynth config
 		void MSConfig(MSChannel MS_Channel);
+
+		// update multisynth config but skip changing clock source
+		void MSConfig2(MSChannel MS_Channel);
+
+		// update multisynth clock source
+		void MSSourceConfig(MSChannel MS_Channel);
 
 		void CLKPowerCmd(CLKChannel CLK_Channel);
 		void CLKConfig(CLKChannel CLK_Channel);
