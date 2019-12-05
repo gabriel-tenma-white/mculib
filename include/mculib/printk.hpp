@@ -1,10 +1,10 @@
 #pragma once
 
-#ifdef MCULIB_ENABLE_PRINTK
-#include <mculib/message_log.hpp>
-#define printk(...) mculib::messageLog.printf(__VA_ARGS__)
+#ifdef MCULIB_DISABLE_PRINTK
+#define printk(...) /**/
 
 #else
-#define printk(...) /**/
+#include <mculib/message_log.hpp>
+#define printk(...) mculib::messageLog.printf(__VA_ARGS__)
 
 #endif
