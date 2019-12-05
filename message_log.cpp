@@ -77,6 +77,10 @@ namespace mculib {
 		_wpos = bufferSizeBytes - 1;
 		buffer[_wpos] = 0;
 	}
+	
+	uint32_t MessageLog::bytesWritten() {
+		return _wpos;
+	}	
 
 	char messageBuffer[MESSAGELOG_SIZE];
 	MessageLog messageLog(messageBuffer, MESSAGELOG_SIZE);
@@ -91,3 +95,16 @@ extern "C" const char* dmesg() {
 		tmp++;
 	return tmp;
 }
+
+
+
+extern "C" const char* dmesg1(uint32_t startPos) {
+	uint32_t currPos = mculib::messageLog.bytesWritten();
+	uint32_t bytesToReturn = currPos - startPos;
+	const char* msg = dmesg();
+	int len = strlen(msg);
+	if(len < bytesToReturn)
+		bytesToReturn = len;
+	return msg + len - bytesToReturn;
+}
+

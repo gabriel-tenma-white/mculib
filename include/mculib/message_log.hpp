@@ -21,6 +21,10 @@ namespace mculib {
 		// rotate the buffer so that the earliest message is at position 0,
 		// and add null byte to the end
 		void rotate();
+
+		// returns a counter that counts the number of bytes written so far.
+		// the value of the counter may jump if rotate() is called.
+		uint32_t bytesWritten();
 	};
 
 	extern MessageLog messageLog;
@@ -28,3 +32,4 @@ namespace mculib {
 };
 
 extern "C" const char* dmesg();
+extern "C" const char* dmesg1(uint32_t startPos);
