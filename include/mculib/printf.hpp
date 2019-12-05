@@ -1,3 +1,4 @@
+#include <stdarg.h>
 
 namespace mculib {
 	int chvsnprintf(char* s, size_t size, const char* fmt, va_list ap);
