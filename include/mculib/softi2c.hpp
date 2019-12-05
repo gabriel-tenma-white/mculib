@@ -34,30 +34,29 @@ namespace mculib {
 		}
 
 		void init() {
-			_delay();
+			_delay(); _delay(); _delay();
 			digitalWrite(sda, 0);
-			_delay();
+			_delay(); _delay(); _delay();
 			digitalWrite(clk, 0);
-			_delay();
+			_delay(); _delay(); _delay();
 			
 			scl_high();
-			_delay();
+			_delay(); _delay(); _delay();
 			sda_high();
-			_delay();
+			_delay(); _delay(); _delay();
 		}
 		void begin() {
 			sda_low();
-			_delay();
+			_delay(); _delay(); _delay();
 			scl_low();
-			_delay();
+			_delay(); _delay(); _delay();
 		}
 		void end() {
 			sda_low();
-			_delay();
+			_delay(); _delay(); _delay();
 			scl_high();
-			_delay();
+			_delay(); _delay(); _delay();
 			sda_high();
-			_delay();
 			for(int i=0;i<10;i++) _delay();
 		}
 		void send(uint32_t data, int bits) {
@@ -139,6 +138,32 @@ namespace mculib {
 			end();
 			return 0;
 		}
+
+		// return value: 0: success; -1: no device ack; -2: no register addr ack or data ack
+		int write(uint8_t devAddr, uint8_t* data, int len) {
+			begin();
+			
+			// device address
+			send(devAddr, 8);
+			// ack bit
+			if(recv(1) == 1) {
+				end();
+				return -1;
+			}
+			
+			for(int i=0; i<len; i++) {
+				// register address
+				send(data[i], 8);
+				// ack bit
+				if(recv(1) == 1) {
+					end();
+					return -2;
+				}
+			}
+			end();
+			return 0;
+		}
+
 		// return value: >= 0: the read data; -1: no device ack; -2: no register addr ack
 		int read(uint8_t devAddr, uint8_t addr) {
 			begin();
