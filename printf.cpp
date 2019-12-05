@@ -27,7 +27,7 @@
 
 #define MAX_FILLER 11
 #define FLOAT_PRECISION 9
-
+#define CHPRINTF_USE_FLOAT 1
 
 
 static char *long_to_string_with_divisor(char *p, long num, unsigned radix, long divisor) {
