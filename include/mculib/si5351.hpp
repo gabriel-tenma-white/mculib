@@ -272,6 +272,9 @@ namespace Si5351 {
 
 	struct PLLStruct
 	{
+		// WARNING: the below multiplier factor must be set to the true
+		// multiplier factor times 128.
+		// TODO: change MSStruct to be consistent with this definition too.
 		uint32_t PLL_Multiplier_Integer;
 		uint32_t PLL_Multiplier_Numerator;
 		uint32_t PLL_Multiplier_Denominator;
@@ -479,7 +482,7 @@ namespace Si5351 {
 		// send PLL config to si5351
 		void PLLConfig(PLLChannel PLL_Channel);
 
-		// send PLL config to si5351, changing only integer and numerator
+		// experimental. If in doubt, do not use.
 		void PLLConfig2(PLLChannel PLL_Channel);
 
 		// reset one PLL
