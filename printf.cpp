@@ -30,10 +30,10 @@
 #define CHPRINTF_USE_FLOAT 1
 
 
-static char *long_to_string_with_divisor(char *p, long num, unsigned radix, long divisor) {
+static char *long_to_string_with_divisor(char *p, int64_t num, unsigned radix, int64_t divisor) {
 	int i;
 	char *q;
-	long l, ll;
+	int64_t l, ll;
 
 	l = num;
 	if (divisor == 0) {
@@ -60,27 +60,26 @@ static char *long_to_string_with_divisor(char *p, long num, unsigned radix, long
 	return p;
 }
 
-static char *ch_ltoa(char *p, long num, unsigned radix) {
+static char *ch_ltoa(char *p, int64_t num, unsigned radix) {
 
 	return long_to_string_with_divisor(p, num, radix, 0);
 }
 
 
-static const long pow10[FLOAT_PRECISION] = {
+static const uint64_t pow10[FLOAT_PRECISION] = {
 		10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000
 };
 
-static char *ftoa(char *p, double num, unsigned long precision) {
-	long l;
+static char *ftoa(char *p, float num, int digits) {
+	int64_t l;
+	if ((digits == 0) || (digits > FLOAT_PRECISION))
+		digits = FLOAT_PRECISION;
+	uint64_t precision = pow10[digits - 1];
 
-	if ((precision == 0) || (precision > FLOAT_PRECISION))
-		precision = FLOAT_PRECISION;
-	precision = pow10[precision - 1];
-
-	l = (long)num;
+	l = (int64_t)num;
 	p = long_to_string_with_divisor(p, l, 10, 0);
 	*p++ = '.';
-	l = (long)((num - l) * precision);
+	l = (int64_t)((num - l) * precision);
 	return long_to_string_with_divisor(p, l, 10, precision / 10);
 }
 
@@ -91,15 +90,15 @@ static char *ftoa(char *p, double num, unsigned long precision) {
  *          with output on a @p BaseSequentialStream.
  *          The general parameters format is: %[-][width|*][.precision|*][l|L]p.
  *          The following parameter types (p) are supported:
- *          - <b>x</b> hexadecimal integer.
- *          - <b>X</b> hexadecimal long.
- *          - <b>o</b> octal integer.
- *          - <b>O</b> octal long.
- *          - <b>d</b> decimal signed integer.
- *          - <b>D</b> decimal signed long.
- *          - <b>u</b> decimal unsigned integer.
- *          - <b>U</b> decimal unsigned long.
- *          - <b>c</b> character.
+ *          - <b>x</b> hexadecimal int32.
+ *          - <b>X</b> hexadecimal int64.
+ *          - <b>o</b> octal int32.
+ *          - <b>O</b> octal int64.
+ *          - <b>d</b> decimal signed int32.
+ *          - <b>D</b> decimal signed int64.
+ *          - <b>u</b> decimal unsigned int32.
+ *          - <b>U</b> decimal unsigned int64.
+ *          - <b>c</b> char.
  *          - <b>s</b> string.
  *          .
  *
@@ -121,7 +120,7 @@ int chvprintf(const putChar_t& putChar, const char* fmt, va_list ap) {
 	int i, precision, width;
 	int n = 0;
 	bool is_long, left_align;
-	long l;
+	int64_t l;
 	float f;
 	char tmpbuf[2*MAX_FILLER + 1];
 
@@ -200,9 +199,9 @@ int chvprintf(const putChar_t& putChar, const char* fmt, va_list ap) {
 		case 'I':
 		case 'i':
 			if (is_long)
-				l = va_arg(ap, long);
+				l = va_arg(ap, int64_t);
 			else
-				l = va_arg(ap, int);
+				l = va_arg(ap, int32_t);
 			if (l < 0) {
 				*p++ = '-';
 				l = -l;
@@ -232,9 +231,9 @@ int chvprintf(const putChar_t& putChar, const char* fmt, va_list ap) {
 			c = 8;
 unsigned_common:
 			if (is_long)
-				l = va_arg(ap, unsigned long);
+				l = va_arg(ap, uint64_t);
 			else
-				l = va_arg(ap, unsigned int);
+				l = va_arg(ap, uint32_t);
 			p = ch_ltoa(p, l, c);
 			break;
 		default:
