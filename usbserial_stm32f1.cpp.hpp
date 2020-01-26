@@ -13,7 +13,7 @@ using namespace mculib;
 namespace usbSerial {
 	small_function<void(uint8_t* s, int len)> _receiveCB;
 	
-static const struct usb_device_descriptor dev = {
+static const struct usb_device_descriptor defaultDescriptor = {
 	.bLength = USB_DT_DEVICE_SIZE,
 	.bDescriptorType = USB_DT_DEVICE,
 	.bcdUSB = 0x0200,
@@ -21,9 +21,9 @@ static const struct usb_device_descriptor dev = {
 	.bDeviceSubClass = 0,
 	.bDeviceProtocol = 0,
 	.bMaxPacketSize0 = 64,
-	.idVendor = 0x0483,
-	.idProduct = 0x5740,
-	.bcdDevice = 0x0200,
+	.idVendor = 0x04b4,
+	.idProduct = 0x0008,
+	.bcdDevice = 0x0001,
 	.iManufacturer = 1,
 	.iProduct = 2,
 	.iSerialNumber = 3,
@@ -232,15 +232,18 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 				cdcacm_control_request);
 }
 static usbd_device* currentUsbdDevice = NULL;
-usbd_device* initUsbSerial() {
+usbd_device* initUsbSerial(const usb_device_descriptor* descriptor) {
 	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_OTGFS);
 	
 	//gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11 | GPIO12);
 	//gpio_set_af(GPIOA, GPIO_AF10, GPIO11 | GPIO12);
-	
+
+	if(descriptor == nullptr)
+		descriptor = &defaultDescriptor;
+
 	usbd_device *usbd_dev;
-	usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
+	usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, descriptor, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
 	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
 	currentUsbdDevice = usbd_dev;
 	
