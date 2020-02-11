@@ -45,8 +45,35 @@ namespace mculib {
 		constexpr Pad(): _bank(0), _index(0), _bsrr(0), _idr(0) {}
 		constexpr Pad(uint32_t bank, uint32_t index):
 			_bank(bank), _index(index),
-			_bsrr((uint32_t)&GPIO_BSRR(bank)),
-			_idr((uint32_t)&GPIO_IDR(bank)) {
+			_bsrr(BSRR(bank)),
+			_idr(IDR(bank)) {
+		}
+
+		// device-specific functions
+
+		// return the address of the BSRR register for the bank
+		static constexpr uint32_t BSRR(uint32_t bank) {
+			#if defined(MCULIB_DEVICE_SUBFAMILY_STM32F0)
+				return bank + 0x18;
+			#elif defined(MCULIB_DEVICE_SUBFAMILY_STM32F1)
+				return bank + 0x10;
+			#elif defined(MCULIB_DEVICE_SUBFAMILY_STM32F3)
+				return bank + 0x18;
+			#else
+				#error "Device subfamily not supported"
+			#endif
+		}
+		// return the address of the IDR register for the bank
+		static constexpr uint32_t IDR(uint32_t bank) {
+			#if defined(MCULIB_DEVICE_SUBFAMILY_STM32F0)
+				return bank + 0x10;
+			#elif defined(MCULIB_DEVICE_SUBFAMILY_STM32F1)
+				return bank + 0x08;
+			#elif defined(MCULIB_DEVICE_SUBFAMILY_STM32F3)
+				return bank + 0x10;
+			#else
+				#error "Device subfamily not supported"
+			#endif
 		}
 	};
 	
