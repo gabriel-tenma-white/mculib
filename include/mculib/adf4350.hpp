@@ -35,6 +35,8 @@ namespace ADF4350 {
 			CLKDIVMODE_RESYNC = 0b10
 		} clkDivMode;
 
+		bool refDouble = false;
+		bool refDiv2 = false;
 		bool rfEnable = true;
 		bool auxEnable = false;
 		bool feedbackFromDivided = false;
@@ -61,6 +63,10 @@ namespace ADF4350 {
 			int auxEn = auxEnable ? 1 : 0;
 			int fb = feedbackFromDivided ? 0 : 1;
 			int noiseMode = lowSpurMode ? 0b11 : 0b00;
+			int refDbDivMode = 0b00;
+			if(refDouble) refDbDivMode |= 0b10;
+			if(refDiv2) refDbDivMode |= 0b01;
+
 
 			// reg 5
 			//        LD pin      register 5
@@ -75,8 +81,8 @@ namespace ADF4350 {
 			sendWord((int(clkDivMode)<<15) | (clkDivDivider<<3) | 0b011);
 			
 			// reg 2
-			//        low spur mode     muxout    reference db/div2    R          CP current    int-N    LDP     PD pol   register 2
-			sendWord((noiseMode<<29) | (0b001<<26) | (0b00 << 24) | (R<<14) | (cpCurrent<<9) | (0<<8) | (0<<7) | (1<<6) | 0b010);
+			//        low spur mode     muxout        reference db/div2      R          CP current    int-N    LDP     PD pol   register 2
+			sendWord((noiseMode<<29) | (0b001<<26) | (refDbDivMode << 24) | (R<<14) | (cpCurrent<<9) | (0<<8) | (0<<7) | (1<<6) | 0b010);
 			
 			// reg 1
 			//      prescaler   phase  frac modulus
