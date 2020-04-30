@@ -260,6 +260,11 @@ void send(usbd_device* dev, const char* s, int len) {
 			asm __volatile__ ( "nop" );
 	}
 }
+
+bool send_noWait(usbd_device* dev, const char* s, int len) {
+	return usbd_ep_write_packet(dev, 0x82, s, len) != 0;
+}
+
 }
 
 extern "C" void usb_hp_can_tx_isr(void)
