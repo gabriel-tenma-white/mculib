@@ -19,38 +19,38 @@ namespace ADF4350 {
 		int R = 1;
 		bool pdwn = false;
 		uint8_t rfPower = 0b01;
-		static constexpr int auxPower = 0b00;
+		int auxPower = 0b00;
 
 		// band select divider. 1 to 255.
-		static constexpr int  bsDivider = 255;
+		int  bsDivider = 255;
 
 		// charge pump current, 0 to 15.
-		static constexpr int cpCurrent = 15;
+		int cpCurrent = 15;
 
 		// CLKDIV divider (for fastlock and phase resync). 0 to 4095.
-		static constexpr int clkDivDivider = 6;
+		int clkDivDivider = 6;
 
-		static constexpr enum {
+		enum {
 			CLKDIVMODE_OFF = 0b00,
 			CLKDIVMODE_FASTLOCK = 0b01,
 			CLKDIVMODE_RESYNC = 0b10
 		} clkDivMode = CLKDIVMODE_OFF;
 
-		static constexpr bool refDouble = false;
-		static constexpr bool refDiv2 = false;
-		static constexpr bool rfEnable = true;
-		static constexpr bool auxEnable = false;
-		static constexpr bool feedbackFromDivided = false;
-		static constexpr bool lowSpurMode = true;
-		static constexpr int noiseMode = lowSpurMode ? 0b11 : 0b00;
-		static constexpr int refDbDivMode = (refDouble << 1) | (refDiv2 << 0);
+		bool refDouble = false;
+		bool refDiv2 = false;
+		bool rfEnable = true;
+		bool auxEnable = false;
+		bool feedbackFromDivided = false;
+		bool lowSpurMode = true;
+		int noiseMode = lowSpurMode ? 0b11 : 0b00;
+		int refDbDivMode = (refDouble << 1) | (refDiv2 << 0);
 
-		ADF4350Driver(const sendWord_t& _sendWord): sendWord(_sendWord) {}
-
+		ADF4350Driver(const sendWord_t& _sendWord):
+				sendWord(_sendWord) {}
 
 		//odiv: output division factor, 1 to 16
 		void sendConfig() {
-			bool was_pwdn = pdwn;
+			// bool was_pwdn = pdwn;
 			pdwn = false; //Power down is no longer active.
 			uint8_t odiv;
 			switch(O) {
